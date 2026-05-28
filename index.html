@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Falling Lucky Stars</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+/* ล็อคหน้าจอพื้นหลังสีดำ */
+body{
+    background: #000;
+    overflow:hidden;
+    font-family:'Helvetica Neue',sans-serif;
+    color:white;
+    width:100vw;
+    height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+/* คอนเทนเนอร์ล็อคสัดส่วน 16:10 */
+.screen-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: calc(100vh * 1.6);
+    max-height: calc(100vw / 1.6);
+    aspect-ratio: 16 / 10;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* =======================================================
+   INTRO SCENE
+======================================================= */
+
+/* เปลี่ยนเป็น absolute เพื่อให้อยู่แค่ในกรอบ 16:10 */
+#intro-scene{
+    position:absolute;
+    inset:0;
+    background: radial-gradient(circle at center,#111 0%,#050505 40%,#000 100%);
+    overflow:hidden;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:999;
+    opacity:1;
+    transition:opacity 3s ease;
+}
+
+/* background stars */
+
+.intro-stars-layer{
+    position:absolute;
+    inset:0;
+
+    background-image:
+    radial-gradient(white 1px,transparent 1px),
+    radial-gradient(white 1px,transparent 1px),
+    radial-gradient(rgba(255,255,255,0.6) 1px,transparent 1px);
+
+    background-size:
+    120px 120px,
+    180px 180px,
+    240px 240px;
+
+    background-position:
+    0 0,
+    40px 60px,
+    130px 90px;
+
+    opacity:0.25;
+
+    animation:starsFloat 25s linear infinite;
+}
+
+@keyframes starsFloat{
+    from{
+        transform:translateY(0px);
+    }
+    to{
+        transform:translateY(-80px);
+    }
+}
+
+/* intro text */
+
+#intro-title-wrapper{
+    text-align:center;
+    z-index:5;
+}
+
+#intro-small-text{
+    font-size:0.9rem;
+    letter-spacing:10px;
+    font-weight:300;
+    color:rgba(255,255,255,0.5);
+    opacity:0;
+    animation:fadeInSmallText 3s ease forwards;
+}
+
+#intro-title{
+    margin-top:25px;
+    font-size:4rem;
+    font-weight:200;
+    letter-spacing:18px;
+    text-transform:uppercase;
+    opacity:0;
+    animation:cinematicTitle 6s ease forwards;
+    animation-delay:1s;
+}
+
+#intro-subtitle{
+    margin-top:25px;
+    font-size:1rem;
+    letter-spacing:8px;
+    font-weight:200;
+    color:rgba(255,255,255,0.65);
+    opacity:0;
+    animation:fadeInSubtitle 4s ease forwards;
+    animation-delay:3.5s;
+}
+
+@keyframes fadeInSmallText{
+    0%{ opacity:0; transform:translateY(20px); }
+    100%{ opacity:1; transform:translateY(0); }
+}
+
+@keyframes cinematicTitle{
+    0%{ opacity:0; transform: scale(0.9) translateY(30px); letter-spacing:35px; filter:blur(10px); }
+    50%{ opacity:1; filter:blur(0); }
+    100%{ opacity:1; transform: scale(1) translateY(0); letter-spacing:18px; filter:blur(0); }
+}
+
+@keyframes fadeInSubtitle{
+    0%{ opacity:0; transform:translateY(15px); }
+    100%{ opacity:1; transform:translateY(0); }
+}
+
+/* shooting stars */
+
+.intro-shooting-star{
+    position:absolute;
+    width:2px;
+    height:2px;
+    background:white;
+    border-radius:50%;
+    opacity:0;
+    box-shadow: 0 0 10px white, 0 0 20px white, 0 0 30px white;
+}
+
+.intro-shooting-star:nth-child(2){
+    top:12%;
+    right:8%;
+    animation:shootingStar 3s ease 1s forwards;
+}
+
+.intro-shooting-star:nth-child(3){
+    top:20%;
+    right:25%;
+    animation:shootingStar 4s ease 2s forwards;
+}
+
+.intro-shooting-star:nth-child(4){
+    top:45%;
+    right:10%;
+    animation:shootingStar 2.8s ease 4s forwards;
+}
+
+.intro-shooting-star:nth-child(5){
+    top:8%;
+    right:40%;
+    animation:shootingStar 3.5s ease 5s forwards;
+}
+
+.intro-shooting-star:nth-child(6){
+    top:60%;
+    right:5%;
+    animation:shootingStar 4s ease 6s forwards;
+}
+
+@keyframes shootingStar{
+    0%{ opacity:0; transform: translate(0,0) scale(1); }
+    10%{ opacity:1; }
+    100%{ opacity:0; transform: translate(-900px,700px) scale(0); }
+}
+
+/* =======================================================
+   MAIN SCENE
+======================================================= */
+
+#main-scene{
+    position:relative;
+    z-index:10;
+    text-align:center;
+    opacity:0;
+    transition:opacity 2s ease;
+}
+
+.main-title{
+    font-size:1.5rem;
+    font-weight:300;
+    letter-spacing:5px;
+    margin-bottom:50px;
+    color:rgba(255,255,255,0.7);
+}
+
+/* countdown */
+
+#countdown-overlay{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:12rem;
+    font-weight:100;
+    display:none;
+    text-shadow:0 0 40px rgba(255,255,255,0.3);
+}
+
+/* lucky number */
+
+.lucky-number-box{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    margin-bottom:60px;
+    transition:opacity 0.5s ease;
+}
+
+.digit{
+    width:85px;
+    height:120px;
+    background:rgba(255,255,255,0.05);
+    border-bottom:1px solid rgba(255,255,255,0.3);
+    font-size:5rem;
+    font-weight:100;
+    line-height:120px;
+    text-align:center;
+    transition:all 0.3s ease;
+}
+
+.digit.locked{
+    border-bottom:2px solid white;
+    text-shadow: 0 0 20px white;
+    font-weight:400;
+}
+
+@keyframes finalReveal{
+    0%{ transform:scale(1); text-shadow: 0 0 10px white; }
+    50%{ transform:scale(1.25); text-shadow: 0 0 30px white, 0 0 60px white, 0 0 100px white; }
+    100%{ transform:scale(1); text-shadow: 0 0 15px white; }
+}
+
+.digit.final{
+    animation:finalReveal 1.4s ease;
+}
+
+/* button */
+
+.btn{
+    background:none;
+    color:white;
+    border:1px solid rgba(255,255,255,0.5);
+    padding:14px 40px;
+    letter-spacing:4px;
+    font-size:1rem;
+    font-weight:200;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.btn:hover{
+    background:white;
+    color:black;
+}
+
+/* celebration */
+
+.star-particle{
+    position:absolute;
+    border-radius:50%;
+    background:white;
+    pointer-events:none;
+    opacity:0;
+    box-shadow: 0 0 10px white;
+}
+
+@keyframes explode{
+    0%{ transform: translate(0,0) scale(1); opacity:1; }
+    100%{ transform: translate(var(--tx),var(--ty)) scale(0); opacity:0; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="screen-wrapper">
+
+    <div id="intro-scene">
+        <div class="intro-stars-layer"></div>
+        <div class="intro-shooting-star"></div>
+        <div class="intro-shooting-star"></div>
+        <div class="intro-shooting-star"></div>
+        <div class="intro-shooting-star"></div>
+        <div class="intro-shooting-star"></div>
+
+        <div id="intro-title-wrapper">
+            <div id="intro-small-text">DSI05 BYENIOR PRESENTS</div>
+            <div id="intro-title">Falling Lucky Stars</div>
+            <div id="intro-subtitle">A moment written in the stars ✦</div>
+        </div>
+    </div>
+
+    <div id="main-scene">
+        <h1 class="main-title">FALLING LUCKY STARS</h1>
+        <div id="countdown-overlay">3</div>
+
+        <div class="lucky-number-box" id="digit-box">
+            <div class="digit" id="d1">0</div>
+            <div class="digit" id="d2">0</div>
+            <div class="digit" id="d3">0</div>
+            <div class="digit" id="d4">0</div>
+        </div>
+
+        <button class="btn" id="drawBtn">BEGIN THE DRAW</button>
+    </div>
+
+</div>
+
+<script>
+
+/* =======================================================
+   DATA
+======================================================= */
+const poolOfWinners = Array.from({ length: 28 }, (_, i) => String(i + 1).padStart(4, '0'));
+let isRunning = false;
+let spinIntervalId;
+let drumrollIntervalId;
+
+/* =======================================================
+   AUDIO
+======================================================= */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type){
+    if(audioCtx.state === 'suspended'){ audioCtx.resume(); }
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if(type === 'tick'){
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150,audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.5,audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.1);
+    }
+    else if(type === 'drumroll'){
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(60 + Math.random() * 40, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3,audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+    }
+    else if(type === 'lock'){
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+    }
+    else if(type === 'victory'){
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq,index)=>{
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'sine';
+            o.frequency.setValueAtTime(freq, audioCtx.currentTime + (index * 0.1));
+            g.gain.setValueAtTime(0.3, audioCtx.currentTime + (index * 0.1));
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (index * 0.1) + 0.4);
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.start(audioCtx.currentTime + (index * 0.1));
+            o.stop(audioCtx.currentTime + (index * 0.1) + 0.4);
+        });
+    }
+}
+
+/* =======================================================
+   INTRO START
+======================================================= */
+document.addEventListener('DOMContentLoaded',()=>{
+    setTimeout(()=>{
+        document.getElementById('intro-scene').style.opacity = '0';
+        document.getElementById('main-scene').style.opacity = '1';
+        setTimeout(()=>{
+            document.getElementById('intro-scene').style.display = 'none';
+        },3000);
+    },11000);
+});
+
+/* =======================================================
+   ELEMENTS
+======================================================= */
+const drawBtn = document.getElementById('drawBtn');
+const countdownOverlay = document.getElementById('countdown-overlay');
+const digitBox = document.getElementById('digit-box');
+const digits = [
+    document.getElementById('d1'),
+    document.getElementById('d2'),
+    document.getElementById('d3'),
+    document.getElementById('d4')
+];
+
+/* =======================================================
+   DRAW BUTTON
+======================================================= */
+drawBtn.addEventListener('click',()=>{
+    if(isRunning) return;
+    isRunning = true;
+    drawBtn.disabled = true;
+
+    digits.forEach(el=>{
+        el.innerText = "0";
+        el.classList.remove('locked');
+        el.classList.remove('final');
+    });
+
+    countdownOverlay.innerText = "3";
+    countdownOverlay.style.display = "block";
+    digitBox.style.opacity = "0.05";
+    playSound('tick');
+
+    let count = 3;
+    const countdownInterval = setInterval(()=>{
+        count--;
+        if(count > 0){
+            countdownOverlay.innerText = count;
+            playSound('tick');
+        }
+        else{
+            clearInterval(countdownInterval);
+            countdownOverlay.style.display = "none";
+            digitBox.style.opacity = "1";
+            startSpinning();
+        }
+    },1000);
+});
+
+/* =======================================================
+   SPINNING
+======================================================= */
+function startSpinning(){
+    spinIntervalId = setInterval(()=>{
+        digits.forEach(el=>{
+            if(!el.classList.contains('locked')){
+                el.innerText = Math.floor(Math.random() * 10);
+            }
+        });
+    },50);
+
+    drumrollIntervalId = setInterval(()=>{ playSound('drumroll'); },80);
+
+    setTimeout(()=>{
+        clearInterval(drumrollIntervalId);
+        stopSpinningOneByOne();
+    },8500);
+}
+
+/* =======================================================
+   STOP SPINNING
+======================================================= */
+function stopSpinningOneByOne(){
+    const winningNumber = poolOfWinners[Math.floor(Math.random() * poolOfWinners.length)];
+
+    winningNumber.split('').forEach((num,index)=>{
+        setTimeout(()=>{
+            digits[index].innerText = num;
+            digits[index].classList.add('locked');
+            playSound('lock');
+
+            if(index === winningNumber.length - 1){
+                digits[index].classList.add('final');
+                clearInterval(spinIntervalId);
+                playSound('victory');
+                createCelebrationStars();
+                isRunning = false;
+                drawBtn.disabled = false;
+                drawBtn.innerText = "SPIN AGAIN";
+            }
+        },index * 1800);
+    });
+}
+
+/* =======================================================
+   CELEBRATION
+======================================================= */
+function createCelebrationStars(){
+    const numParticles = 70;
+    const container = document.getElementById('main-scene');
+
+    for(let i=0;i<numParticles;i++){
+        const star = document.createElement('div');
+        star.className = 'star-particle';
+        const size = Math.random() * 4 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+
+        const boxRect = digitBox.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        /* อิงตำแหน่งเทียบกับ container แทนพิกัดหน้าจอรวม */
+        star.style.left = (boxRect.left - containerRect.left) + (boxRect.width / 2) + 'px';
+        star.style.top = (boxRect.top - containerRect.top) + (boxRect.height / 2) + 'px';
+
+        const tx = (Math.random() - 0.5) * 1400;
+        const ty = (Math.random() - 0.5) * 900;
+        star.style.setProperty('--tx',`${tx}px`);
+        star.style.setProperty('--ty',`${ty}px`);
+
+        const duration = Math.random() * 2 + 0.8;
+        star.style.animation = `explode ${duration}s ease-out forwards`;
+
+        container.appendChild(star);
+        setTimeout(()=>{ star.remove(); },duration * 1000);
+    }
+}
+
+</script>
+
+</body>
+</html>
